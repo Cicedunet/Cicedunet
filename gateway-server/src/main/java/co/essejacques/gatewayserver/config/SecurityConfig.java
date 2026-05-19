@@ -7,10 +7,7 @@ import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -19,26 +16,23 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http
-            .csrf(csrf -> csrf.disable())
+            .csrf().disable()
             .authorizeExchange(exchange -> exchange
                 .pathMatchers("/actuator/**", "/eureka/**").permitAll()
                 .anyExchange().authenticated()
             )
-            .httpBasic(withDefaults());
+            // Active l'authentification Basic (Username/Password)
+            .httpBasic();
 
         return http.build();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public MapReactiveUserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails user = User.builder()
+    public MapReactiveUserDetailsService userDetailsService() {
+        // Crée l'utilisateur "admin" reconnu par la Gateway
+        UserDetails user = User.withDefaultPasswordEncoder()
                 .username("admin")
-                .password(passwordEncoder.encode("admin"))
+                .password("admin")
                 .roles("ADMIN")
                 .build();
         return new MapReactiveUserDetailsService(user);
